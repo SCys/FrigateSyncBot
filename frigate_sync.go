@@ -273,7 +273,7 @@ func mute() {
 }
 
 func loadConfig() {
-	cfg, err := ini.Load("my.ini")
+	cfg, err := ini.Load("main.ini")
 	if err != nil {
 		fmt.Printf("Fail to read file: %v", err)
 		os.Exit(1)
