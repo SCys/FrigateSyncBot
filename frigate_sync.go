@@ -214,7 +214,7 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 	}
 	bytes := tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
 
-	caption := fmt.Sprintf("#Event #%s %s #Begin", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02 15:04:05"))
+	caption := fmt.Sprintf("#Event #%s %s #Begin", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02T15:04:05"))
 
 	photo := tgbotapi.NewPhotoUpload(TGChatID, bytes)
 	photo.Caption = caption
