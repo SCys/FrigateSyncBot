@@ -1,0 +1,19 @@
+[telegram]
+app_id = 0
+app_hash = APP_HASH
+bot_token = BOT_TOKEN
+chat_id =  -1
+
+[frigate]
+url = https://frigate_domain_name
+path_prefix = /data/frigate/storage/recordings
+cameras = hf-shop, hf-door, hf-room
+
+[ffmpeg]
+path_video = /tmp/frigate_tmp.mp4
+path_thumbnail = /tmp/frigate_tmp.jpg
+path_list = /tmp/frigate_tmp.txt
+
+[mqtt]
+host = 127.0.0.1
+port = 1883
