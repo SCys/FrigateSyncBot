@@ -159,6 +159,9 @@ func getMQTTClient() mqtt.Client {
 	opts.SetDefaultPublishHandler(messagePubHandler)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
+	opts.ConnectRetry = true
+	opts.ConnectRetryInterval = 5 * time.Second
+	opts.AutoReconnect = true
 	return mqtt.NewClient(opts)
 }
 
@@ -189,7 +192,7 @@ func cameraEventHandler(data []byte, api *tgbotapi.BotAPI) {
 		fmt.Println("Detection " + event.After.ID)
 		sendAlarm(api, event.After.ID, event.Before.Camera, time.Now())
 	} else if event.After.Label == "person" && event.Type == "end" {
-		sendClip(api, event.After.ID, event.Before.Camera, time.Now())
+		go sendClip(api, event.After.ID, event.Before.Camera, time.Now())
 	}
 }
 
@@ -255,7 +258,7 @@ func sendClip(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 	}
 	bytes := tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
 
-	caption := fmt.Sprintf("#Event #%s %s() #End", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02T15:04:05"))
+	caption := fmt.Sprintf("#Event #%s %s #End", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02T15:04:05"))
 
 	video := tgbotapi.NewVideoUpload(TGChatID, bytes)
 	video.Caption = caption
