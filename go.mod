@@ -1,4 +1,4 @@
-module example.com/m
+module iscys.com/FrigateBot
 
 go 1.17
 
