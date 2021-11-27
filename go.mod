@@ -1,4 +1,4 @@
-module iscys.com/FrigateBot
+module iscys.com/FrigateSyncBot
 
 go 1.17
 
