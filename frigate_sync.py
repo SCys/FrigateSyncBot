@@ -8,7 +8,7 @@ from telethon.sync import TelegramClient
 from configparser import ConfigParser
 
 config = ConfigParser()
-with open("config.ini", "r") as f:
+with open("main.ini", "r") as f:
     config.read_file(f)
 
 app_id = config["telegram"]["app_id"]
