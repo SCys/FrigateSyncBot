@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"gopkg.in/ini.v1"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
