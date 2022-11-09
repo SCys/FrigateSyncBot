@@ -53,11 +53,11 @@ func main() {
 		if token := mqttClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 			eventHandler(msg.Payload(), bot)
 		}); token.Wait() && token.Error() != nil {
-			log.Errorf("mqtt event failed", token.Error())
+			log.Errorf("mqtt event failed:%s", token.Error())
 			wg.Done()
 		}
 
-		log.Infof("Subscribed to topic %s\n", topic)
+		log.Infof("Subscribed to topic %s", topic)
 		wg.Wait()
 	}
 }

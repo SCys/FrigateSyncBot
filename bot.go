@@ -57,7 +57,7 @@ type CamEvent struct {
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Infof("Received message: %s from MQTTTopic: %s\n", msg.Payload(), msg.Topic())
+	log.Infof("Received message: %s from MQTTTopic: %s", msg.Payload(), msg.Topic())
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
@@ -118,13 +118,13 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 
 	res, err := http.Get(fullPath)
 	if err != nil {
-		log.Errorf("get photo for event %s failed: %s\n", id, err)
+		log.Errorf("get photo for event %s failed: %s", id, err)
 		return
 	}
 
 	content, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Infof("io event %s error: %s\n", id, err)
+		log.Infof("io event %s error: %s", id, err)
 		return
 	}
 	bytes := tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
@@ -136,11 +136,11 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 
 	msg, err := bot.Send(photo)
 	if err != nil {
-		log.Errorf("send message failed:%v\n", err)
+		log.Errorf("send message failed:%v", err)
 		return
 	}
 
-	log.Infof("Sent photo for event %s\n", id)
+	log.Infof("Sent photo for event %s", id)
 
 	// delete message after 10 minutes
 	go func() {
@@ -149,7 +149,7 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 			ChatID:    TGChatID,
 			MessageID: msg.MessageID,
 		})
-		log.Infof("Deleted photo for event %s\n", id)
+		log.Infof("Deleted photo for event %s", id)
 	}()
 }
 
@@ -162,13 +162,13 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 
 	res, err := http.Get(fullPath)
 	if err != nil {
-		log.Errorf("get clip for event %s failed: %s\n", id, err)
+		log.Errorf("get clip for event %s failed: %s", id, err)
 		return
 	}
 
 	content, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Errorf("io event %s error: %s\n", id, err)
+		log.Errorf("io event %s error: %s", id, err)
 		return
 	}
 	bytes := tgbotapi.FileBytes{
@@ -189,9 +189,9 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 	}
 
 	if _, err := bot.Send(video); err != nil {
-		log.Errorf("Failed to send clip:%s\n", err.Error())
+		log.Errorf("Failed to send clip:%s", err.Error())
 		return
 	}
 
-	log.Infof("Sent clip for event %s\n", id)
+	log.Infof("Sent clip for event %s", id)
 }
