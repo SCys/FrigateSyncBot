@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io"
 
-	_ "image/jpeg"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -127,7 +126,7 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 		return
 	}
 
-	content, err := ioutil.ReadAll(res.Body)
+	content, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Infof("io event %s error: %s\n", id, err)
 		return
@@ -171,7 +170,7 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 		return
 	}
 
-	content, err := ioutil.ReadAll(res.Body)
+	content, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Errorf("io event %s error: %s\n", id, err)
 		return
