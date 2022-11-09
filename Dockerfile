@@ -10,4 +10,4 @@ ADD frigate_sync /app/frigate_sync
 
 RUN chmod +x /app/frigate_sync
 
-ENTRYPOINT ['/app/frigate_sync']
+CMD ['/app/frigate_sync']
