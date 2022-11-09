@@ -2,7 +2,8 @@ FROM alpine AS builder
 WORKDIR /data/
 ADD . .
 RUN apk add --no-cache go && \
-    go build -ldflags "-w -s" -o frigate_sync .
+    go build -o frigate_sync .
+#    go build -ldflags "-w -s" -o frigate_sync .
 
 FROM alpine
 WORKDIR /app/
