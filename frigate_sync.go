@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	_ "image/jpeg"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -15,6 +16,8 @@ import (
 func main() {
 	loadConfig()
 	// loadDB()
+
+	log.Info("connecting telegram api server...")
 
 	proxyUrl, err := url.Parse(HttpProxy)
 	cli := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
@@ -26,7 +29,7 @@ func main() {
 			if err != nil {
 				switch err.(type) {
 				case *url.Error:
-					log.Println("Internet is dead :( retrying to connect in 2 minutes")
+					log.Errorf("Internet is dead :( retrying to connect in 2 minutes")
 					time.Sleep(1 * time.Minute)
 				default:
 					log.Fatal(err)
@@ -39,7 +42,7 @@ func main() {
 
 	bot.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Infof("Authorized on account %s", bot.Self.UserName)
 
 	mqttClient := getMQTTClient()
 
@@ -62,10 +65,10 @@ func main() {
 			fmt.Println(token.Error())
 		}
 
-		fmt.Printf("Subscribed to MQTTTopic %s\n", MQTTTopic)
+		log.Infof("Subscribed to MQTTTopic %s\n", MQTTTopic)
 
 		wg.Wait()
 		token.Done()
-		fmt.Printf("Unsubscribed to MQTTTopic %s\n", MQTTTopic)
+		log.Infof("Unsubscribed to MQTTTopic %s\n", MQTTTopic)
 	}
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"gopkg.in/ini.v1"
@@ -27,7 +26,7 @@ var (
 func loadConfig() {
 	cfg, err := ini.Load("main.ini")
 	if err != nil {
-		fmt.Printf("Fail to read file: %v", err)
+		log.Infof("Fail to read file: %v", err)
 		os.Exit(1)
 	}
 

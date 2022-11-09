@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
+
 	_ "image/jpeg"
 	"io/ioutil"
 	"net/http"
@@ -58,17 +60,17 @@ type CamEvent struct {
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message: %s from MQTTTopic: %s\n", msg.Payload(), msg.Topic())
+	log.Infof("Received message: %s from MQTTTopic: %s\n", msg.Payload(), msg.Topic())
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	fmt.Println("Connected")
+	log.Info("Connected")
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
 	wg.Done()
 
-	fmt.Printf("Connect lost: %v", err)
+	log.Errorf("Connect lost: %v", err)
 }
 
 func mute() {
@@ -82,7 +84,7 @@ func unMute() {
 func getMQTTClient() mqtt.Client {
 	broker := MQTTHost
 	port := MQTTPort
-	fmt.Println("Try connect:", broker, port)
+	log.Infof("Try connect:%s:%s", broker, port)
 
 	opts := mqtt.NewClientOptions()
 
@@ -121,13 +123,13 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 
 	res, err := http.Get(fullPath)
 	if err != nil {
-		fmt.Printf("get photo for event %s failed: %s\n", id, err)
+		log.Errorf("get photo for event %s failed: %s\n", id, err)
 		return
 	}
 
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Printf("io event %s error: %s\n", id, err)
+		log.Infof("io event %s error: %s\n", id, err)
 		return
 	}
 	bytes := tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
@@ -139,11 +141,11 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 
 	msg, err := bot.Send(photo)
 	if err != nil {
-		fmt.Println(err)
+		log.Errorf("send message failed:%v\n", err)
 		return
 	}
 
-	fmt.Printf("Sent photo for event %s\n", id)
+	log.Infof("Sent photo for event %s\n", id)
 
 	// delete message after 10 minutes
 	go func() {
@@ -152,7 +154,7 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 			ChatID:    TGChatID,
 			MessageID: msg.MessageID,
 		})
-		fmt.Printf("Deleted photo for event %s\n", id)
+		log.Infof("Deleted photo for event %s\n", id)
 	}()
 }
 
@@ -165,13 +167,13 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 
 	res, err := http.Get(fullPath)
 	if err != nil {
-		fmt.Printf("get clip for event %s failed: %s\n", id, err)
+		log.Errorf("get clip for event %s failed: %s\n", id, err)
 		return
 	}
 
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Printf("io event %s error: %s\n", id, err)
+		log.Errorf("io event %s error: %s\n", id, err)
 		return
 	}
 	bytes := tgbotapi.FileBytes{
@@ -192,9 +194,9 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 	}
 
 	if _, err := bot.Send(video); err != nil {
-		fmt.Printf("Failed to send clip:%s\n", err.Error())
+		log.Errorf("Failed to send clip:%s\n", err.Error())
 		return
 	}
 
-	fmt.Printf("Sent clip for event %s\n", id)
+	log.Infof("Sent clip for event %s\n", id)
 }
