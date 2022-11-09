@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	_ "image/jpeg"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -44,31 +44,20 @@ func main() {
 
 	log.Infof("Authorized on account %s", bot.Self.UserName)
 
-	mqttClient := getMQTTClient()
-
-	for range time.Tick(5 * time.Second) {
-		if !mqttClient.IsConnected() {
-			continue
-		}
-
-		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-			panic(token.Error())
-		}
-
+	{
+		mqttClient := getMQTTClient()
+		wg := sync.WaitGroup{}
 		wg.Add(1)
+		topic := "frigate/events"
 
-		token := mqttClient.Subscribe(MQTTTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
+		if token := mqttClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 			eventHandler(msg.Payload(), bot)
-		})
-
-		if token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
+		}); token.Wait() && token.Error() != nil {
+			log.Errorf("mqtt event failed", token.Error())
+			wg.Done()
 		}
 
-		log.Infof("Subscribed to MQTTTopic %s\n", MQTTTopic)
-
+		log.Infof("Subscribed to topic %s\n", topic)
 		wg.Wait()
-		token.Done()
-		log.Infof("Unsubscribed to MQTTTopic %s\n", MQTTTopic)
 	}
 }

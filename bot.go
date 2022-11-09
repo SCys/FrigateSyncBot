@@ -8,7 +8,6 @@ import (
 
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -17,7 +16,6 @@ import (
 
 var (
 	muteTime int64 = time.Now().Unix()
-	wg       sync.WaitGroup
 )
 
 type CamEvent struct {
@@ -67,8 +65,6 @@ var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	wg.Done()
-
 	log.Errorf("Connect lost: %v", err)
 }
 
