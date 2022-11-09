@@ -77,18 +77,32 @@ func unMute() {
 }
 
 func getMQTTClient() mqtt.Client {
+	//broker := MQTTHost
+	//port := MQTTPort
+	//log.Infof("Try connect:%s:%s", broker, port)
+	//
+	//opts := mqtt.NewClientOptions()
+	//
+	//opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
+	//opts.SetClientID("frigate_events_worker")
+	//opts.SetOnConnectHandler(connectHandler)
+	//opts.SetConnectionLostHandler(connectLostHandler)
+	//opts.SetDefaultPublishHandler(messagePubHandler)
+
 	broker := MQTTHost
 	port := MQTTPort
 	log.Infof("Try connect:%s:%s", broker, port)
 
 	opts := mqtt.NewClientOptions()
-
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
 	opts.SetClientID("frigate_events_worker")
-	opts.SetOnConnectHandler(connectHandler)
-	opts.SetConnectionLostHandler(connectLostHandler)
-	opts.SetDefaultPublishHandler(messagePubHandler)
 
+	opts.SetDefaultPublishHandler(messagePubHandler)
+	opts.OnConnect = connectHandler
+	opts.OnConnectionLost = connectLostHandler
+	opts.ConnectRetry = true
+	opts.ConnectRetryInterval = 5 * time.Second
+	opts.AutoReconnect = true
 	return mqtt.NewClient(opts)
 }
 
