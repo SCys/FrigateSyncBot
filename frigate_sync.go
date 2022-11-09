@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	_ "image/jpeg"
 	"net/http"
 	"net/url"
@@ -49,6 +50,10 @@ func main() {
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		topic := "frigate/events"
+		token := mqttClient.Subscribe(topic, 1, nil)
+		token.Wait()
+
+		log.Infof("Subscribed to topic %s\n", topic)
 
 		if token := mqttClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 			eventHandler(msg.Payload(), bot)
@@ -60,4 +65,35 @@ func main() {
 		log.Infof("Subscribed to topic %s", topic)
 		wg.Wait()
 	}
+}
+
+func getMQTTClient() mqtt.Client {
+	//broker := MQTTHost
+	//port := MQTTPort
+	//log.Infof("Try connect:%s:%s", broker, port)
+	//
+	//opts := mqtt.NewClientOptions()
+	//
+	//opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
+	//opts.SetClientID("frigate_events_worker")
+	//opts.SetOnConnectHandler(connectHandler)
+	//opts.SetConnectionLostHandler(connectLostHandler)
+	//opts.SetDefaultPublishHandler(messagePubHandler)
+
+	broker := MQTTHost
+	port := MQTTPort
+	address := fmt.Sprintf("tcp://%s:%s", broker, port)
+	log.Infof("connecting mqtt server:%s", address)
+
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(address)
+	opts.SetClientID("frigate_events_worker")
+
+	opts.SetDefaultPublishHandler(messagePubHandler)
+	opts.OnConnect = connectHandler
+	opts.OnConnectionLost = connectLostHandler
+	opts.ConnectRetry = true
+	opts.ConnectRetryInterval = 5 * time.Second
+	opts.AutoReconnect = true
+	return mqtt.NewClient(opts)
 }

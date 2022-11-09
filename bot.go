@@ -76,36 +76,6 @@ func unMute() {
 	muteTime = time.Now().Unix() - 1
 }
 
-func getMQTTClient() mqtt.Client {
-	//broker := MQTTHost
-	//port := MQTTPort
-	//log.Infof("Try connect:%s:%s", broker, port)
-	//
-	//opts := mqtt.NewClientOptions()
-	//
-	//opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
-	//opts.SetClientID("frigate_events_worker")
-	//opts.SetOnConnectHandler(connectHandler)
-	//opts.SetConnectionLostHandler(connectLostHandler)
-	//opts.SetDefaultPublishHandler(messagePubHandler)
-
-	broker := MQTTHost
-	port := MQTTPort
-	log.Infof("Try connect:%s:%s", broker, port)
-
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(fmt.Sprintf("tcp://%s:%s", broker, port))
-	opts.SetClientID("frigate_events_worker")
-
-	opts.SetDefaultPublishHandler(messagePubHandler)
-	opts.OnConnect = connectHandler
-	opts.OnConnectionLost = connectLostHandler
-	opts.ConnectRetry = true
-	opts.ConnectRetryInterval = 5 * time.Second
-	opts.AutoReconnect = true
-	return mqtt.NewClient(opts)
-}
-
 func eventHandler(data []byte, api *tgbotapi.BotAPI) {
 	var event CamEvent
 	if err := json.Unmarshal(data, &event); err != nil {
