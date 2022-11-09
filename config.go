@@ -15,6 +15,9 @@ var (
 	// FRIGATE
 	FrigateURL = "http://frigate.local:8080"
 
+	// Proxy
+	HttpProxy = ""
+
 	// MQTT Options
 	MQTTHost  = "mqtt"
 	MQTTPort  = "1883"
@@ -35,6 +38,9 @@ func loadConfig() {
 
 	// load frigate config
 	FrigateURL = cfg.Section("frigate").Key("url").String()
+
+	// load proxy config
+	HttpProxy = cfg.Section("http").Key("proxy").MustString("")
 
 	// load mqtt config
 	mqtt := cfg.Section("mqtt")

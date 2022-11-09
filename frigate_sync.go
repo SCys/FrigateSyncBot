@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "image/jpeg"
 	"log"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -15,10 +16,13 @@ func main() {
 	loadConfig()
 	// loadDB()
 
-	bot, err := tgbotapi.NewBotAPI(TGBotToken)
+	proxyUrl, err := url.Parse(HttpProxy)
+	cli := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+
+	bot, err := tgbotapi.NewBotAPIWithClient(TGBotToken, cli)
 	if err != nil {
 		for {
-			bot, err = tgbotapi.NewBotAPI(TGBotToken)
+			bot, err = tgbotapi.NewBotAPIWithClient(TGBotToken, cli)
 			if err != nil {
 				switch err.(type) {
 				case *url.Error:
@@ -33,7 +37,7 @@ func main() {
 		}
 	}
 
-	bot.Debug = false
+	bot.Debug = true
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
