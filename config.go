@@ -16,8 +16,9 @@ var (
 	FrigateURL = "http://frigate.local:8080"
 
 	// MQTT Options
-	MQTTHost = "127.0.0.1"
-	MQTTPort = "1883"
+	MQTTHost  = "mqtt"
+	MQTTPort  = "1883"
+	MQTTTopic = "frigate/events"
 )
 
 func loadConfig() {

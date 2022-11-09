@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -38,32 +39,29 @@ func main() {
 
 	mqttClient := getMQTTClient()
 
-	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-
-	go sub(mqttClient, bot)
-
-	cfg := tgbotapi.NewUpdate(0)
-	cfg.Timeout = 60
-	botUpdates, err := bot.GetUpdatesChan(cfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for update := range botUpdates {
-		if update.CallbackQuery != nil {
-			fmt.Print(update)
-			bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
-			switch update.CallbackQuery.Data {
-			case "muteCommand":
-				mute()
-			case "unMuteCommand":
-				unMute()
-			}
+	for range time.Tick(5 * time.Second) {
+		if !mqttClient.IsConnected() {
+			continue
 		}
-		if update.Message != nil {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-			fmt.Println(msg)
+
+		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+			panic(token.Error())
 		}
+
+		wg.Add(1)
+
+		token := mqttClient.Subscribe(MQTTTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
+			eventHandler(msg.Payload(), bot)
+		})
+
+		if token.Wait() && token.Error() != nil {
+			fmt.Println(token.Error())
+		}
+
+		fmt.Printf("Subscribed to MQTTTopic %s\n", MQTTTopic)
+
+		wg.Wait()
+		token.Done()
+		fmt.Printf("Unsubscribed to MQTTTopic %s\n", MQTTTopic)
 	}
 }
