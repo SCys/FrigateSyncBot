@@ -16,7 +16,7 @@ var (
 	FrigateURL = "http://frigate.local:8080"
 
 	// MQTT Options
-	MQTTHost = "127.0.0.1"
+	MQTTHost = "mqtt"
 	MQTTPort = "1883"
 )
 

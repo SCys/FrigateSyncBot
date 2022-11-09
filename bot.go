@@ -198,14 +198,14 @@ func sendClip(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 	}
 
 	// delete message after 30 minutes
-	go func() {
-		time.Sleep(30 * time.Minute)
-		bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
-			ChatID:    TGChatID,
-			MessageID: msg.MessageID,
-		})
-		fmt.Printf("Deleted clip for event %s\n", id)
-	}()
+	// go func() {
+	// 	time.Sleep(30 * time.Minute)
+	// 	bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
+	// 		ChatID:    TGChatID,
+	// 		MessageID: msg.MessageID,
+	// 	})
+	// 	fmt.Printf("Deleted clip for event %s\n", id)
+	// }()
 
 	fmt.Printf("Sent clip for event %s\n", id)
 }
