@@ -41,7 +41,7 @@ func main() {
 		}
 	}
 
-	bot.Debug = true
+	bot.Debug = false
 
 	log.Infof("Authorized on account %s", bot.Self.UserName)
 

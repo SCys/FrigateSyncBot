@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
+
+	log "github.com/sirupsen/logrus"
 
 	"net/http"
 	"strings"
@@ -12,10 +13,6 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-)
-
-var (
-	muteTime int64 = time.Now().Unix()
 )
 
 type CamEvent struct {
@@ -56,27 +53,21 @@ type CamEvent struct {
 	Type string `json:"type"`
 }
 
-var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Infof("Received message: %s from MQTTTopic: %s", msg.Payload(), msg.Topic())
-}
+var (
+	messagePubHandler = func(client mqtt.Client, msg mqtt.Message) {
+		log.Infof("Received message: %s from MQTTTopic: %s", msg.Payload(), msg.Topic())
+	}
 
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	log.Info("Connected")
-}
+	connectHandler = func(client mqtt.Client) {
+		log.Info("Connected")
+	}
 
-var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Errorf("Connect lost: %v", err)
-}
+	connectLostHandler = func(client mqtt.Client, err error) {
+		log.Errorf("Connect lost: %v", err)
+	}
+)
 
-func mute() {
-	muteTime = time.Now().Unix() + 300
-}
-
-func unMute() {
-	muteTime = time.Now().Unix() - 1
-}
-
-func eventHandler(data []byte, api *tgbotapi.BotAPI) {
+func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
 	var event CamEvent
 	if err := json.Unmarshal(data, &event); err != nil {
 		panic(err)
@@ -85,20 +76,14 @@ func eventHandler(data []byte, api *tgbotapi.BotAPI) {
 	now := time.Now()
 
 	if event.Before.Label == "person" && event.Type == "new" {
-		sendAlarm(api, event, now)
-	} else if event.After.Label == "person" && event.Type == "end" {
-		go sendClip(api, event, now)
-	}
-}
-
-func sendAlarm(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
-	if muteTime < now.Unix() {
 		go sendPhoto(bot, event.Before.ID, event.Before.Camera, now)
+	} else if event.Type == "end" {
+		go sendClip(bot, event, now)
 	}
 }
 
 func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
-	fullPath := FrigateURL + "/api/events/" + id + "/snapshot.jpg"
+	fullPath := fmt.Sprintf("%s/api/events/%s/snapshot.jpg?download=true", FrigateURL, id)
 
 	res, err := http.Get(fullPath)
 	if err != nil {
@@ -140,9 +125,9 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 	id := event.After.ID
 	camera := event.After.Camera
-	fullPath := FrigateURL + "/api/events/" + id + "/clip.mp4"
+	fullPath := fmt.Sprintf("%s/api/events/%s/clip.mp4?download=true", FrigateURL, id)
 
-	time.Sleep(2 * time.Minute)
+	time.Sleep(5 * time.Second)
 
 	res, err := http.Get(fullPath)
 	if err != nil {
@@ -160,13 +145,19 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 		Bytes: content,
 	}
 
-	caption := fmt.Sprintf("#Event #%s %s #End", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02T15:04:05"))
+	caption := fmt.Sprintf("#Event #End\n#%s %s\n#%s [URL](%s)",
+		strings.ReplaceAll(camera, "-", "_"),
+		now.Format("2006-01-02T15:04:05"),
+		event.After.Label,
+		fullPath,
+	)
 
 	video := tgbotapi.NewVideoUpload(TGChatID, bytes)
 	video.Caption = caption
 	video.DisableNotification = true
 	video.FileSize = len(content)
 	video.MimeType = "video/mp4"
+	video.ParseMode = tgbotapi.ModeMarkdown
 
 	if endTime, ok := event.After.EndTime.(float64); ok {
 		video.Duration = int(endTime - event.After.StartTime)
