@@ -20,8 +20,13 @@ func main() {
 
 	log.Info("connecting telegram api server...")
 
+	var cli *http.Client
 	proxyUrl, err := url.Parse(HttpProxy)
-	cli := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	if err == nil {
+		cli = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	} else {
+		cli = &http.Client{}
+	}
 
 	bot, err := tgbotapi.NewBotAPIWithClient(TGBotToken, cli)
 	if err != nil {
