@@ -112,35 +112,17 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 	id := event.After.ID
 	camera := event.After.Camera
-	fullPath := fmt.Sprintf("%s/api/events/%s/clip.mp4?download=true", FrigateURL, id)
 
-	time.Sleep(5 * time.Second)
-
-	res, err := http.Get(fullPath)
-	if err != nil {
-		log.Errorf("get clip for event %s failed: %s", id, err)
-		return
+	bytes := downloadVideo(fmt.Sprintf("%s_%s.mp4", camera, now.Format(time.RFC3339)), id)
+	if bytes == nil {
+		return;
 	}
-
-	content, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Errorf("io event %s error: %s", id, err)
-		return
-	}
-	bytes := tgbotapi.FileBytes{
-		Name:  fmt.Sprintf("%s_%s.mp4", camera, now.Format("2006-01-02T15:04:05")),
-		Bytes: content,
-	}
-
-	caption := fmt.Sprintf("#Event #End\n#%s %s\n#%s [URL](%s)",
-		strings.ReplaceAll(camera, "-", "_"),
-		now.Format("2006-01-02T15:04:05"),
-		event.After.Label,
-		fullPath,
-	)
 
 	video := tgbotapi.NewVideo(TGChatID, bytes)
-	video.Caption = caption
+	video.Caption = fmt.Sprintf("#Event #End\n#%s %s\n",
+		strings.ReplaceAll(camera, "-", "_"),
+		now.Format(time.RFC3339),
+	)
 	video.DisableNotification = true
 	video.ParseMode = tgbotapi.ModeMarkdown
 
@@ -175,4 +157,26 @@ func downloadPhoto(id string) *tgbotapi.FileBytes {
 		return nil
 	}
 	return &tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
+}
+
+func downloadVideo(name, id string) *tgbotapi.FileBytes {
+	fullPath := fmt.Sprintf("%s/api/events/%s/clip.mp4?download=true", FrigateURL, id)
+
+	time.Sleep(5 * time.Second)
+
+	res, err := http.Get(fullPath)
+	if err != nil {
+		log.Errorf("get clip for event %s failed: %s", id, err)
+		return nil
+	}
+
+	content, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Errorf("io event %s error: %s", id, err)
+		return nil
+	}
+	return &tgbotapi.FileBytes{
+		Name:  name,
+		Bytes: content,
+	}
 }
