@@ -12,7 +12,7 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type CamEvent struct {
@@ -83,24 +83,11 @@ func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
 }
 
 func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
-	fullPath := fmt.Sprintf("%s/api/events/%s/snapshot.jpg?download=true", FrigateURL, id)
-
-	res, err := http.Get(fullPath)
-	if err != nil {
-		log.Errorf("get photo for event %s failed: %s", id, err)
-		return
-	}
-
-	content, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Infof("io event %s error: %s", id, err)
-		return
-	}
-	bytes := tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
+	bytes := downloadPhoto(id)
 
 	caption := fmt.Sprintf("#Event #%s %s", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02T15:04:05"))
 
-	photo := tgbotapi.NewPhotoUpload(TGChatID, bytes)
+	photo := tgbotapi.NewPhoto(TGChatID, bytes)
 	photo.Caption = caption
 
 	msg, err := bot.Send(photo)
@@ -109,17 +96,17 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 		return
 	}
 
-	log.Infof("Sent photo for event %s", id)
+	log.Infof("event %s message %s is sent ", id, msg.MessageID)
 
 	// delete message after 10 minutes
-	go func() {
-		time.Sleep(2 * time.Minute)
-		bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
-			ChatID:    TGChatID,
-			MessageID: msg.MessageID,
-		})
-		log.Infof("Deleted photo for event %s", id)
-	}()
+	// go func() {
+	// 	time.Sleep(2 * time.Minute)
+	// 	bot.(tgbotapi.DeleteMessageConfig{
+	// 		ChatID:    TGChatID,
+	// 		MessageID: msg.MessageID,
+	// 	})
+	// 	log.Infof("Deleted photo for event %s", id)
+	// }()
 }
 
 func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
@@ -152,12 +139,14 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 		fullPath,
 	)
 
-	video := tgbotapi.NewVideoUpload(TGChatID, bytes)
+	video := tgbotapi.NewVideo(TGChatID, bytes)
 	video.Caption = caption
 	video.DisableNotification = true
-	video.FileSize = len(content)
-	video.MimeType = "video/mp4"
 	video.ParseMode = tgbotapi.ModeMarkdown
+
+	if thumb := downloadPhoto(id); thumb != nil {
+		video.Thumb = thumb
+	}
 
 	if endTime, ok := event.After.EndTime.(float64); ok {
 		video.Duration = int(endTime - event.After.StartTime)
@@ -169,4 +158,21 @@ func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
 	}
 
 	log.Infof("Sent clip for event %s", id)
+}
+
+func downloadPhoto(id string) *tgbotapi.FileBytes {
+	fullPath := fmt.Sprintf("%s/api/events/%s/snapshot.jpg?download=true", FrigateURL, id)
+
+	res, err := http.Get(fullPath)
+	if err != nil {
+		log.Errorf("get photo for event %s failed: %s", id, err)
+		return nil
+	}
+
+	content, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Infof("io event %s error: %s", id, err)
+		return nil
+	}
+	return &tgbotapi.FileBytes{Name: "snapshot.jpg", Bytes: content}
 }
