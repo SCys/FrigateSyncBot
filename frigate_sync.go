@@ -28,10 +28,10 @@ func main() {
 		cli = &http.Client{}
 	}
 
-	bot, err := tgbotapi.NewBotAPIWithClient(TGBotToken, cli)
+	bot, err := tgbotapi.NewBotAPIWithClient(TGBotToken, tgbotapi.APIEndpoint, cli)
 	if err != nil {
 		for {
-			bot, err = tgbotapi.NewBotAPIWithClient(TGBotToken, cli)
+			bot, err = tgbotapi.NewBotAPIWithClient(TGBotToken, tgbotapi.APIEndpoint, cli)
 			if err != nil {
 				switch err.(type) {
 				case *url.Error:
