@@ -14,6 +14,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var bot *tgbotapi.BotAPI
+
 func main() {
 	loadConfig()
 	// loadDB()
@@ -28,27 +30,34 @@ func main() {
 		cli = &http.Client{}
 	}
 
-	bot, err := tgbotapi.NewBotAPIWithClient(TGBotToken, tgbotapi.APIEndpoint, cli)
-	if err != nil {
-		for {
-			bot, err = tgbotapi.NewBotAPIWithClient(TGBotToken, tgbotapi.APIEndpoint, cli)
-			if err != nil {
-				switch err.(type) {
-				case *url.Error:
-					log.Errorf("Internet is dead :( retrying to connect in 2 minutes")
-					time.Sleep(1 * time.Minute)
-				default:
-					log.Fatal(err)
-				}
-			} else {
-				break
+	for {
+		bot, err = tgbotapi.NewBotAPIWithClient(TGBotToken, tgbotapi.APIEndpoint, cli)
+		if err != nil {
+			switch err.(type) {
+			case *url.Error:
+				log.Errorf("Internet is dead :( retrying to connect in 2 minutes")
+				time.Sleep(1 * time.Minute)
+			default:
+				log.Fatal(err)
 			}
+
+			continue
 		}
+
+		break
+	}
+
+	// failed to create bot instance
+	if bot == nil {
+		log.Fatal("count not create bot instance")
+		return
 	}
 
 	bot.Debug = false
 
 	log.Infof("Authorized on account %s", bot.Self.UserName)
+
+	go startUploadChannel()
 
 	{
 		mqttClient := getMQTTClient()

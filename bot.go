@@ -65,6 +65,9 @@ var (
 	connectLostHandler = func(client mqtt.Client, err error) {
 		log.Errorf("Connect lost: %v", err)
 	}
+
+	// main channel uploader
+	chnUploader = make(chan CamEvent, 1000)
 )
 
 func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
@@ -78,7 +81,12 @@ func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
 	if event.Before.Label == "person" && event.Type == "new" {
 		go sendPhoto(bot, event.Before.ID, event.Before.Camera, now)
 	} else if event.Type == "end" {
-		go sendClip(bot, event, now)
+		select {
+		case chnUploader <- event:
+		default:
+			// channel closed?
+			log.Errorf("channel closed, event is %v", event.After)
+		}
 	}
 }
 
@@ -109,29 +117,32 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 	// }()
 }
 
-func sendClip(bot *tgbotapi.BotAPI, event CamEvent, now time.Time) {
+func sendClip(event CamEvent) {
 	id := event.After.ID
 	camera := event.After.Camera
+	duration := 0
+	if endTime, ok := event.After.EndTime.(float64); ok {
+		duration = int(endTime - event.After.StartTime)
+	}
 
-	bytes := downloadVideo(fmt.Sprintf("%s_%s.mp4", camera, now.Format(time.RFC3339)), id)
+	bytes := downloadVideo(camera+"_"+id+".mp4", id)
 	if bytes == nil {
-		return;
+		return
+	}
+
+	// ignore too small video
+	if len(bytes.Bytes) <= 1024 {
+		return
 	}
 
 	video := tgbotapi.NewVideo(TGChatID, bytes)
-	video.Caption = fmt.Sprintf("#Event #End\n#%s %s\n",
-		strings.ReplaceAll(camera, "-", "_"),
-		now.Format(time.RFC3339),
-	)
+	video.Caption = fmt.Sprintf("#Event #End\n#%s %02f\n", strings.ReplaceAll(camera, "-", "_"), event.After.StartTime)
 	video.DisableNotification = true
 	video.ParseMode = tgbotapi.ModeMarkdown
+	video.Duration = duration
 
 	if thumb := downloadPhoto(id); thumb != nil {
 		video.Thumb = thumb
-	}
-
-	if endTime, ok := event.After.EndTime.(float64); ok {
-		video.Duration = int(endTime - event.After.StartTime)
 	}
 
 	if _, err := bot.Send(video); err != nil {
@@ -179,4 +190,17 @@ func downloadVideo(name, id string) *tgbotapi.FileBytes {
 		Name:  name,
 		Bytes: content,
 	}
+}
+
+func startUploadChannel() {
+	// select loop for upload
+	for {
+		select {
+		case i := <-chnUploader:
+			sendClip(i)
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
 }
