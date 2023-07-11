@@ -84,8 +84,7 @@ func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
 		select {
 		case chnUploader <- event:
 		default:
-			// channel closed?
-			log.Errorf("channel closed, event is %v", event.After)
+			log.Errorf("Uploader channel is full, drop event %s", event.After.ID)
 		}
 	}
 }
@@ -104,7 +103,7 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 		return
 	}
 
-	log.Infof("event %s message %s is sent ", id, msg.MessageID)
+	log.Infof("event %s message %d is sent ", id, msg.MessageID)
 
 	// delete message after 10 minutes
 	// go func() {
@@ -135,8 +134,11 @@ func sendClip(event CamEvent) {
 		return
 	}
 
+	// convert unix timestamp to time string
+	startTime := time.Unix(int64(event.After.StartTime), 0).Format("2006-01-02T15:04:05")
+
 	video := tgbotapi.NewVideo(TGChatID, bytes)
-	video.Caption = fmt.Sprintf("#Event #End\n#%s %02f\n", strings.ReplaceAll(camera, "-", "_"), event.After.StartTime)
+	video.Caption = fmt.Sprintf("#Event #End\n#%s at %s\n", strings.ReplaceAll(camera, "-", "_"), startTime)
 	video.DisableNotification = true
 	video.ParseMode = tgbotapi.ModeMarkdown
 	video.Duration = duration
