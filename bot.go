@@ -118,39 +118,39 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 
 func sendClip(event CamEvent) {
 	id := event.After.ID
-	camera := event.After.Camera
-	duration := 0
-	if endTime, ok := event.After.EndTime.(float64); ok {
-		duration = int(endTime - event.After.StartTime)
-	}
+	// camera := event.After.Camera
+	// duration := 0
+	// if endTime, ok := event.After.EndTime.(float64); ok {
+	// 	duration = int(endTime - event.After.StartTime)
+	// }
 
-	bytes := downloadVideo(camera+"_"+id+".mp4", id)
-	if bytes == nil {
-		return
-	}
+	// bytes := downloadVideo(camera+"_"+id+".mp4", id)
+	// if bytes == nil {
+	// 	return
+	// }
 
-	// ignore too small video
-	if len(bytes.Bytes) <= 1024 {
-		return
-	}
+	// // ignore too small video
+	// if len(bytes.Bytes) <= 1024 {
+	// 	return
+	// }
 
-	// convert unix timestamp to time string
-	startTime := time.Unix(int64(event.After.StartTime), 0).Format("2006-01-02T15:04:05")
+	// // convert unix timestamp to time string
+	// startTime := time.Unix(int64(event.After.StartTime), 0).Format("2006-01-02T15:04:05")
 
-	video := tgbotapi.NewVideo(TGChatID, bytes)
-	video.Caption = fmt.Sprintf("#Event #End\n#%s at %s\n", strings.ReplaceAll(camera, "-", "_"), startTime)
-	video.DisableNotification = true
-	video.ParseMode = tgbotapi.ModeMarkdown
-	video.Duration = duration
+	// video := tgbotapi.NewVideo(TGChatID, bytes)
+	// video.Caption = fmt.Sprintf("#Event #End\n#%s at %s\n", strings.ReplaceAll(camera, "-", "_"), startTime)
+	// video.DisableNotification = true
+	// video.ParseMode = tgbotapi.ModeMarkdown
+	// video.Duration = duration
 
-	if thumb := downloadPhoto(id); thumb != nil {
-		video.Thumb = thumb
-	}
+	// if thumb := downloadPhoto(id); thumb != nil {
+	// 	video.Thumb = thumb
+	// }
 
-	if _, err := bot.Send(video); err != nil {
-		log.Errorf("Failed to send clip:%s", err.Error())
-		return
-	}
+	// if _, err := bot.Send(video); err != nil {
+	// 	log.Errorf("Failed to send clip:%s", err.Error())
+	// 	return
+	// }
 
 	log.Infof("Sent clip for event %s", id)
 }
