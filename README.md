@@ -1,5 +1,7 @@
 # Telegram Frigate Sync Bot
 
+[![Docker CI](https://github.com/SCys/frigate_sync/actions/workflows/docker-ci.yaml/badge.svg)](https://github.com/SCys/frigate_sync/actions/workflows/docker-ci.yaml)
+
 upload frigate videos/photos to telegram chat(group/private chat/channel)
 
 ## Depend
