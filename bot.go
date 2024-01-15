@@ -200,15 +200,22 @@ func startUploadChannel() {
 }
 
 func buildCaption(label string, point int64) string {
+	var timeLabel string
+
 	// convert unix timestamp to time string
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
-		log.Errorf("Failed to load time zone: %s", err.Error())
+		log.Warnf("Failed to load time zone: %s", err.Error())
+		timeLabel = time.Unix(point, 0).Format("2006-01-02T15:04:05")
 	} else {
-
+		timeLabel = time.Unix(point, 0).In(location).Format("2006-01-02T15:04:05")
 	}
 
-	startTime := time.Unix(point, 0).In(location).Format("2006-01-02T15:04:05")
+	var captionBuilder strings.Builder
+	captionBuilder.WriteString("#Event #")
+	captionBuilder.WriteString(strings.ReplaceAll(label, "-", "_"))
+	captionBuilder.WriteString(" at ")
+	captionBuilder.WriteString(timeLabel)
 
-	return fmt.Sprintf("#Event #%s at %s", strings.ReplaceAll(label, "-", "_"), startTime)
+	return captionBuilder.String()
 }
