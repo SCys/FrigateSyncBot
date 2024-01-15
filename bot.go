@@ -193,15 +193,10 @@ func downloadVideo(name, id string) *tgbotapi.FileBytes {
 
 func startUploadChannel() {
 	// select loop for upload
-	for {
-		select {
-		case i := <-chnUploader:
-			sendClip(i)
-		}
-
+	for i := range chnUploader {
+		sendClip(i)
 		time.Sleep(100 * time.Millisecond)
 	}
-
 }
 
 func buildCaption(label string, point int64) string {
