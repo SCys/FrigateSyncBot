@@ -1,4 +1,4 @@
-name: Docker CI
+name: CI
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  docker:
+  docker_container:
+    name: Build Docker Container
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
