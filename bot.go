@@ -78,7 +78,12 @@ func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
 
 	now := time.Now()
 
-	if event.Before.Label == "person" && event.Type == "new" {
+	if event.Before.Label != "person" {
+		log.Infof("event %s is %s, ignore", event.Before.ID, event.Before.Label)
+		return
+	}
+
+	if event.Type == "new" {
 		go sendPhoto(bot, event.Before.ID, event.Before.Camera, now)
 	} else if event.Type == "end" {
 		select {
@@ -92,10 +97,8 @@ func eventHandler(data []byte, bot *tgbotapi.BotAPI) {
 func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 	bytes := downloadPhoto(id)
 
-	caption := fmt.Sprintf("#Event #%s %s", strings.ReplaceAll(camera, "-", "_"), now.Format("2006-01-02T15:04:05"))
-
 	photo := tgbotapi.NewPhoto(TGChatID, bytes)
-	photo.Caption = caption
+	photo.Caption = buildCaption(camera, now.Unix())
 
 	msg, err := bot.Send(photo)
 	if err != nil {
@@ -106,51 +109,45 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 	log.Infof("event %s message %d is sent ", id, msg.MessageID)
 
 	// delete message after 10 minutes
-	// go func() {
-	// 	time.Sleep(2 * time.Minute)
-	// 	bot.(tgbotapi.DeleteMessageConfig{
-	// 		ChatID:    TGChatID,
-	// 		MessageID: msg.MessageID,
-	// 	})
-	// 	log.Infof("Deleted photo for event %s", id)
-	// }()
+	go func() {
+		time.Sleep(5 * time.Minute)
+		bot.Send(tgbotapi.DeleteMessageConfig{ChatID: TGChatID, MessageID: msg.MessageID})
+		log.Infof("Deleted photo for event %s", id)
+	}()
 }
 
 func sendClip(event CamEvent) {
 	id := event.After.ID
-	// camera := event.After.Camera
-	// duration := 0
-	// if endTime, ok := event.After.EndTime.(float64); ok {
-	// 	duration = int(endTime - event.After.StartTime)
-	// }
+	camera := event.After.Camera
+	duration := 0
+	if endTime, ok := event.After.EndTime.(float64); ok {
+		duration = int(endTime - event.After.StartTime)
+	}
 
-	// bytes := downloadVideo(camera+"_"+id+".mp4", id)
-	// if bytes == nil {
-	// 	return
-	// }
+	bytes := downloadVideo(camera+"_"+id+".mp4", id)
+	if bytes == nil {
+		return
+	}
 
-	// // ignore too small video
-	// if len(bytes.Bytes) <= 1024 {
-	// 	return
-	// }
+	// ignore too small video
+	if len(bytes.Bytes) <= 1024 {
+		return
+	}
 
-	// // convert unix timestamp to time string
-	// startTime := time.Unix(int64(event.After.StartTime), 0).Format("2006-01-02T15:04:05")
+	video := tgbotapi.NewVideo(TGChatID, bytes)
+	video.Caption = buildCaption(camera, int64(event.After.StartTime))
+	video.DisableNotification = true
+	video.ParseMode = tgbotapi.ModeMarkdown
+	video.Duration = duration
 
-	// video := tgbotapi.NewVideo(TGChatID, bytes)
-	// video.Caption = fmt.Sprintf("#Event #End\n#%s at %s\n", strings.ReplaceAll(camera, "-", "_"), startTime)
-	// video.DisableNotification = true
-	// video.ParseMode = tgbotapi.ModeMarkdown
-	// video.Duration = duration
+	if thumb := downloadPhoto(id); thumb != nil {
+		video.Thumb = thumb
+	}
 
-	// if thumb := downloadPhoto(id); thumb != nil {
-	// 	video.Thumb = thumb
-	// }
-
-	// if _, err := bot.Send(video); err != nil {
-	// 	log.Errorf("Failed to send clip:%s", err.Error())
-	// 	return
-	// }
+	if _, err := bot.Send(video); err != nil {
+		log.Errorf("Failed to send clip:%s", err.Error())
+		return
+	}
 
 	log.Infof("Sent clip for event %s", id)
 }
@@ -205,4 +202,18 @@ func startUploadChannel() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
+}
+
+func buildCaption(label string, point int64) string {
+	// convert unix timestamp to time string
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		log.Errorf("Failed to load time zone: %s", err.Error())
+	} else {
+
+	}
+
+	startTime := time.Unix(point, 0).In(location).Format("2006-01-02T15:04:05")
+
+	return fmt.Sprintf("#Event #%s at %s", strings.ReplaceAll(label, "-", "_"), startTime)
 }
