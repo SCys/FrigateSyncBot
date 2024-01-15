@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -106,7 +107,7 @@ func sendPhoto(bot *tgbotapi.BotAPI, id, camera string, now time.Time) {
 		return
 	}
 
-	log.Infof("event %s message %d is sent ", id, msg.MessageID)
+	log.Infof("event %s message %d is sent", id, msg.MessageID)
 
 	// delete message after 10 minutes
 	go func() {
