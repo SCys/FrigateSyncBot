@@ -2,10 +2,9 @@ name: Docker CI
 
 on:
   push:
-    branches:
-      - 'master'
-  schedule:
-    - cron: '3 8 * * *'
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   docker:
